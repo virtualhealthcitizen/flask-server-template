@@ -71,13 +71,13 @@ jobs:
 
     - name: Build and Push Docker image to Google Artifact Registry
       run: |
-        docker build -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flask-app-test/flask-app:latest .
-        docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flask-app-test/flask-app:latest
+        docker build -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flask-server-template/flask-server-template:latest .
+        docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flask-server-template/flask-server-template:latest
 
     - name: Deploy to Cloud Run (CLI)
       run: |
         gcloud run deploy flask-app \
-          --image=us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flask-app-test/flask-app:latest \
+          --image=us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flask-server-template/flask-server-template:latest \
           --project=${{ secrets.GCP_PROJECT_ID }} \
           --service-account=gh-actions-pipeline@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com \
           --region=us-central1 \
