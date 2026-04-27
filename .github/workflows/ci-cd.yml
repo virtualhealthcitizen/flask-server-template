@@ -1,6 +1,8 @@
 name: Build, Test, and Deploy to Google Cloud Run
 
 on:
+  workflow_dispatch:
+
   push:
     branches: [ main ]
   pull_request:
@@ -12,17 +14,17 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v6
 
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v3
+    - name: Set up Python 3.13
+      uses: actions/setup-python@v6
       with:
-        python-version: 3.8
+        python-version: 3.13
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install flask
+        pip install -r requirements.txt
 
     - name: Run tests
       run: |
@@ -45,24 +47,39 @@ jobs:
         fi
 
     - name: Authenticate to Google Cloud
-      uses: google-github-actions/auth@v0.5.0
+      uses: google-github-actions/auth@v3
       with:
         credentials_json: ${{ secrets.GCLOUD_SERVICE_KEY }}
+
+    - name: Ensure Artifact Registry repository exists
+      run: |
+        REPO_NAME="flask-server-template"
+        LOCATION="us-central1"
+        if ! gcloud artifacts repositories describe "$REPO_NAME" \
+             --location="$LOCATION" --project="${{ secrets.GCP_PROJECT_ID }}" >/dev/null 2>&1; then
+          gcloud artifacts repositories create "$REPO_NAME" \
+            --repository-format=docker \
+            --location="$LOCATION" \
+            --description="Docker repo for flask-server-template" \
+            --project="${{ secrets.GCP_PROJECT_ID }}"
+        else
+          echo "Artifact Registry repository '$REPO_NAME' already exists"
+        fi
 
     - name: Configure Docker to use the gcloud command-line tool as a credential helper
       run: gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
 
     - name: Build and Push Docker image to Google Artifact Registry
       run: |
-        docker build -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/lofty-root-docker-test/flask-app:latest .
-        docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/lofty-root-docker-test/flask-app:latest
+        docker build -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flask-app-test/flask-app:latest .
+        docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flask-app-test/flask-app:latest
 
     - name: Deploy to Cloud Run (CLI)
       run: |
         gcloud run deploy flask-app \
-          --image=us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/lofty-root-docker-test/flask-app:latest \
+          --image=us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flask-app-test/flask-app:latest \
           --project=${{ secrets.GCP_PROJECT_ID }} \
-          --service-account=tekton-pipeline@lofty-root-378503.iam.gserviceaccount.com \
+          --service-account=gh-actions-pipeline@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com \
           --region=us-central1 \
           --platform=managed \
           --quiet \
