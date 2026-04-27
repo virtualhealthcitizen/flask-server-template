@@ -29,7 +29,12 @@ Read more about Flask installation <a href="https://flask.palletsprojects.com/en
    After the image has been successfully built, you can run your Flask app inside a Docker container using:
 
    ```bash
-   docker run -p 5000:5000 flask-sample-app
+   docker run --rm -p 5000:5000 \
+     -e GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS} \
+     -e PORT=5000 \
+     -v $HOME/.config/gcloud:/root/.config/gcloud \
+     -v $HOME/.m2:/root/.m2 \
+     flask-sample-app
    ```
 
    This command runs the Flask application inside a Docker container, mapping port 5000 of the container to port 5000 on your host, allowing you to access the Flask app by visiting `http://localhost:5000` in your web browser.
@@ -98,6 +103,17 @@ You can find the Flask quickstart page <a href="https://flask.palletsprojects.co
   
   `python3 (script_name).py`
 </details>
+
+---
+
+## Notes
+
+### Pass the identity token in the request
+
+```bash
+curl -H "Authorization: Bearer $(gcloud auth print-identity-token)" \
+  https://your-service-url.run.app
+```
 
 ---
 
