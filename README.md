@@ -106,6 +106,17 @@ You can find the Flask quickstart page <a href="https://flask.palletsprojects.co
 
 ---
 
+## Notes
+
+### Pass the identity token in the request
+
+```bash
+curl -H "Authorization: Bearer $(gcloud auth print-identity-token)" \
+  https://your-service-url.run.app
+```
+
+---
+
 For more info about `virtualenv` and installation, see:
 
 https://sourabhbajaj.com/mac-setup/Python/virtualenv.html
